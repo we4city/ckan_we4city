@@ -12,6 +12,7 @@ volumes:
 services:
   ckan:
     container_name: ckan
+    image: ckan
     build:
       context: ../../
     depends_on:
@@ -50,14 +51,15 @@ services:
       - ckan_storage:/var/lib/ckan
 
   datapusher:
-    container_name: datapusher
+    container_name: datapusher_ckan
     image: clementmouchet/datapusher
     ports:
       - "8800:8800"
     restart: unless-stopped
 
   db:
-    container_name: ${POSTGRES_HOST}
+    container_name: ${POSTGRES_HOST}_ckan
+    image: ${POSTGRES_HOST}_ckan
     build:
       context: ../../
       dockerfile: contrib/docker/postgresql/Dockerfile  
@@ -72,7 +74,8 @@ services:
     restart: unless-stopped
 
   solr:
-    container_name: solr
+    container_name: solr_ckan
+    image: solr_ckan
     build:
       context: ../../
       dockerfile: contrib/docker/solr/Dockerfile
@@ -83,7 +86,8 @@ services:
       test: ["CMD", "wget", "-qO", "/dev/null", "http://localhost:8983/solr/"]
 
   redis:
-    container_name: redis
+    container_name: redis_ckan
+    image: redis_ckan
     image: redis:6.2
     restart: unless-stopped
     healthcheck:
