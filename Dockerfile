@@ -2,12 +2,14 @@
 FROM ubuntu:focal AS base
 MAINTAINER Open Knowledge
 
+USER root
+
 # Set timezone
 ENV TZ=UTC
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # Setting the locale
-ENV LC_ALL=en_US.UTF-8       
+ENV LC_ALL=pt_BR.UTF-8       
 RUN apt-get update
 RUN apt-get install --no-install-recommends -y locales
 RUN sed -i "/$LC_ALL/s/^# //g" /etc/locale.gen
@@ -35,6 +37,7 @@ RUN apt-get -q -y update \
         vim \
         wget \
         curl \
+        sudo \
     && apt-get -q clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -66,19 +69,20 @@ RUN ckan-pip3 install -U pip && \
     ckan-pip3 install --upgrade --no-cache-dir -r $CKAN_VENV/src/ckan/requirements.txt && \
     ckan-pip3 install -e $CKAN_VENV/src/ckan/ && \
     ln -s $CKAN_VENV/src/ckan/ckan/config/who.ini $CKAN_CONFIG/who.ini && \
-    cp -v $CKAN_VENV/src/ckan/contrib/docker/ckan-entrypoint.sh /ckan-entrypoint.sh && \
+    sed -i -e 's/\r$//' $CKAN_VENV/src/ckan/contrib/docker/ckan-entrypoint.sh && \
+    cp -vf $CKAN_VENV/src/ckan/contrib/docker/ckan-entrypoint.sh /ckan-entrypoint.sh && \
     chmod +x /ckan-entrypoint.sh && \
     chown -R ckan:ckan $CKAN_HOME $CKAN_VENV $CKAN_CONFIG $CKAN_STORAGE_PATH
 
-FROM base AS test
-RUN ckan-pip3 install -r $CKAN_VENV/src/ckan/dev-requirements.txt && \
-    ckan-pip3 install pytest-ckan && \
-    cp -v $CKAN_VENV/src/ckan/contrib/docker/ckan-test-entrypoint.sh /ckan-test-entrypoint.sh && \
-    chmod +x /ckan-test-entrypoint.sh
-
 WORKDIR $CKAN_VENV/src/ckan/
-ENTRYPOINT ["/ckan-test-entrypoint.sh"]
-CMD ["python", "-m", "pytest", "-v"]
+
+# FROM base AS test
+# RUN ckan-pip3 install -r $CKAN_VENV/src/ckan/dev-requirements.txt && \
+#     ckan-pip3 install pytest-ckan && \
+#     cp -v $CKAN_VENV/src/ckan/contrib/docker/ckan-test-entrypoint.sh /ckan-test-entrypoint.sh && \
+#     chmod +x /ckan-test-entrypoint.sh
+# ENTRYPOINT ["/ckan-test-entrypoint.sh"]
+# CMD ["python", "-m", "pytest", "-v"]
 
 FROM base AS prod
 
@@ -86,5 +90,3 @@ ENTRYPOINT ["/ckan-entrypoint.sh"]
 
 USER ckan
 EXPOSE 5000
-
-CMD ["ckan","-c","/etc/ckan/production.ini", "run", "--host", "0.0.0.0"]
