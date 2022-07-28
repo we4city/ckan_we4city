@@ -58,8 +58,8 @@ services:
     restart: unless-stopped
 
   db:
-    container_name: ${POSTGRES_HOST}_ckan
-    image: ${POSTGRES_HOST}_ckan
+    container_name: ${POSTGRES_HOST}
+    image: ${POSTGRES_HOST}
     build:
       context: ../../
       dockerfile: contrib/docker/postgresql/Dockerfile  
@@ -87,7 +87,6 @@ services:
 
   redis:
     container_name: redis_ckan
-    image: redis_ckan
     image: redis:6.2
     restart: unless-stopped
     healthcheck:
